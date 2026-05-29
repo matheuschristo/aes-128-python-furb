@@ -1,4 +1,4 @@
-import AES
+import aes 
 
 from utils import (
     ler_arquivo_binario,
@@ -20,17 +20,17 @@ def processar_arquivo(operacao, modo, arquivo_entrada, arquivo_saida, chave, iv=
 
     if operacao == "cifrar":
         if modo == "ECB":
-            resultado = AES.cifrar_ecb(dados, chave)
+            resultado = aes.cifrar_ecb(dados, chave)
         elif modo == "CBC":
-            resultado = AES.cifrar_cbc(dados, chave, iv)
+            resultado = aes.cifrar_cbc(dados, chave, iv)
         else:
             raise ValueError("Modo inválido.")
 
     elif operacao == "decifrar":
         if modo == "ECB":
-            resultado = AES.decifrar_ecb(dados, chave)
+            resultado = aes.decifrar_ecb(dados, chave)
         elif modo == "CBC":
-            resultado = AES.decifrar_cbc(dados, chave, iv)
+            resultado = aes.decifrar_cbc(dados, chave, iv)
         else:
             raise ValueError("Modo inválido.")
 
