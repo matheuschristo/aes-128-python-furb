@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import re
 
 from pathlib import Path
 from utils import aplicar_pkcs7_padding, remover_pkcs7_padding
 
+State = list[list[int]]
+Word = list[int]
+RoundKeys = list[State]
 
-def carregar_tabelas_aes(caminho):
+
+def carregar_tabelas_aes(caminho: Path) -> dict[str, list[int]]:
     tabelas = {
         "sbox": [],
         "tabela_l": [],
@@ -56,7 +62,7 @@ INV_SBOX = TABELAS_AES["inv_sbox"]
 RCON = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36]
 
 
-def bytes_para_estado(bloco):
+def bytes_para_estado(bloco: bytes) -> State:
     if len(bloco) != 16:
         raise ValueError("O bloco deve ter exatamente 16 bytes.")
 
@@ -69,7 +75,7 @@ def bytes_para_estado(bloco):
     return estado
 
 
-def estado_para_bytes(estado):
+def estado_para_bytes(estado: State) -> bytes:
     saida = []
 
     for i in range(4):
@@ -79,14 +85,14 @@ def estado_para_bytes(estado):
     return bytes(saida)
 
 
-def imprimir_estado(estado, titulo):
+def imprimir_estado(estado: State, titulo: str) -> None:
     print(titulo)
     for i in estado:
         print(" ".join(f"0x{valor:02x}" for valor in i))
     print()
 
 
-def add_round_key(estado, round_key):
+def add_round_key(estado: State, round_key: State) -> State:
     resultado = [[0 for _ in range(4)] for _ in range(4)]
 
     for i in range(4):
@@ -96,7 +102,7 @@ def add_round_key(estado, round_key):
     return resultado
 
 
-def sub_bytes(estado):
+def sub_bytes(estado: State) -> State:
     resultado = [[0 for _ in range(4)] for _ in range(4)]
 
     for i in range(4):
@@ -106,7 +112,7 @@ def sub_bytes(estado):
     return resultado
 
 
-def inv_sub_bytes(estado):
+def inv_sub_bytes(estado: State) -> State:
     resultado = [[0 for _ in range(4)] for _ in range(4)]
 
     for i in range(4):
@@ -116,7 +122,7 @@ def inv_sub_bytes(estado):
     return resultado
 
 
-def shift_rows(estado):
+def shift_rows(estado: State) -> State:
     resultado = []
 
     for i in range(4):
@@ -126,7 +132,7 @@ def shift_rows(estado):
     return resultado
 
 
-def inv_shift_rows(estado):
+def inv_shift_rows(estado: State) -> State:
     resultado = []
 
     for i in range(4):
@@ -136,7 +142,7 @@ def inv_shift_rows(estado):
     return resultado
 
 
-def multiplicar_galois(a, b):
+def multiplicar_galois(a: int, b: int) -> int:
     if a == 0 or b == 0:
         return 0
 
@@ -153,7 +159,7 @@ def multiplicar_galois(a, b):
     return TABELA_E[soma]
 
 
-def mix_columns(estado):
+def mix_columns(estado: State) -> State:
     resultado = [[0 for _ in range(4)] for _ in range(4)]
 
     for coluna in range(4):
@@ -190,7 +196,7 @@ def mix_columns(estado):
     return resultado
 
 
-def inv_mix_columns(estado):
+def inv_mix_columns(estado: State) -> State:
     resultado = [[0 for _ in range(4)] for _ in range(4)]
 
     for coluna in range(4):
@@ -227,19 +233,19 @@ def inv_mix_columns(estado):
     return resultado
 
 
-def rot_word(word):
+def rot_word(word: Word) -> Word:
     return word[1:] + word[:1]
 
 
-def sub_word(word):
+def sub_word(word: Word) -> Word:
     return [SBOX[byte] for byte in word]
 
 
-def xor_words(word_a, word_b):
+def xor_words(word_a: Word, word_b: Word) -> Word:
     return [a ^ b for a, b in zip(word_a, word_b)]
 
 
-def gerar_words_da_chave(chave):
+def gerar_words_da_chave(chave: bytes) -> list[Word]:
     words = []
 
     for i in range(4):
@@ -266,7 +272,7 @@ def gerar_words_da_chave(chave):
     return words
 
 
-def words_para_round_key(words, numero_round):
+def words_para_round_key(words: list[Word], numero_round: int) -> State:
     round_key = [[0 for _ in range(4)] for _ in range(4)]
     inicio = numero_round * 4
 
@@ -278,7 +284,7 @@ def words_para_round_key(words, numero_round):
     return round_key
 
 
-def expandir_chave(chave):
+def expandir_chave(chave: bytes) -> RoundKeys:
     words = gerar_words_da_chave(chave)
     round_keys = []
 
@@ -289,7 +295,7 @@ def expandir_chave(chave):
     return round_keys
 
 
-def cifrar_bloco(bloco, round_keys):
+def cifrar_bloco(bloco: bytes, round_keys: RoundKeys) -> bytes:
     estado = bytes_para_estado(bloco)
     estado = add_round_key(estado, round_keys[0])
 
@@ -306,7 +312,7 @@ def cifrar_bloco(bloco, round_keys):
     return estado_para_bytes(estado)
 
 
-def decifrar_bloco(bloco, round_keys):
+def decifrar_bloco(bloco: bytes, round_keys: RoundKeys) -> bytes:
     estado = bytes_para_estado(bloco)
     estado = add_round_key(estado, round_keys[10])
     estado = inv_shift_rows(estado)
@@ -323,7 +329,7 @@ def decifrar_bloco(bloco, round_keys):
     return estado_para_bytes(estado)
 
 
-def dividir_em_blocos(dados, tamanho_bloco=16):
+def dividir_em_blocos(dados: bytes, tamanho_bloco: int = 16) -> list[bytes]:
     blocos = []
 
     for i in range(0, len(dados), tamanho_bloco):
@@ -332,7 +338,7 @@ def dividir_em_blocos(dados, tamanho_bloco=16):
     return blocos
 
 
-def cifrar_ecb(dados, chave):
+def cifrar_ecb(dados: bytes, chave: bytes) -> bytes:
     round_keys = expandir_chave(chave)
     dados_com_padding = aplicar_pkcs7_padding(dados)
     blocos = dividir_em_blocos(dados_com_padding)
@@ -346,7 +352,7 @@ def cifrar_ecb(dados, chave):
     return dados_cifrados
 
 
-def decifrar_ecb(dados_cifrados, chave):
+def decifrar_ecb(dados_cifrados: bytes, chave: bytes) -> bytes:
     round_keys = expandir_chave(chave)
     blocos = dividir_em_blocos(dados_cifrados)
 
@@ -359,11 +365,11 @@ def decifrar_ecb(dados_cifrados, chave):
     return remover_pkcs7_padding(dados_decifrados_com_padding)
 
 
-def xor_bytes(bytes_a, bytes_b):
+def xor_bytes(bytes_a: bytes, bytes_b: bytes) -> bytes:
     return bytes(a ^ b for a, b in zip(bytes_a, bytes_b))
 
 
-def cifrar_cbc(dados, chave, iv):
+def cifrar_cbc(dados: bytes, chave: bytes, iv: bytes) -> bytes:
     round_keys = expandir_chave(chave)
     dados_com_padding = aplicar_pkcs7_padding(dados)
     blocos = dividir_em_blocos(dados_com_padding)
@@ -381,7 +387,7 @@ def cifrar_cbc(dados, chave, iv):
     return dados_cifrados
 
 
-def decifrar_cbc(dados_cifrados, chave, iv):
+def decifrar_cbc(dados_cifrados: bytes, chave: bytes, iv: bytes) -> bytes:
     round_keys = expandir_chave(chave)
     blocos = dividir_em_blocos(dados_cifrados)
 

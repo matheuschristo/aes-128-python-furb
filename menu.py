@@ -1,4 +1,6 @@
-import aes 
+from __future__ import annotations
+
+import AES as aes 
 
 from utils import (
     ler_arquivo_binario,
@@ -8,7 +10,7 @@ from utils import (
 )
 
 
-def processar_arquivo(operacao, modo, arquivo_entrada, arquivo_saida, chave, iv=None):
+def processar_arquivo(operacao: str, modo: str, arquivo_entrada: str, arquivo_saida: str, chave: bytes, iv: bytes | None = None) -> bytes:
     """
     Processa um arquivo usando AES-128 em ECB ou CBC.
 
@@ -42,7 +44,7 @@ def processar_arquivo(operacao, modo, arquivo_entrada, arquivo_saida, chave, iv=
     return resultado
 
 
-def menu_aes():
+def menu_aes() -> None:
     print("=== AES-128 ===")
     print("1 - Cifrar")
     print("2 - Decifrar")
